@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="app-shell">
 
@@ -10,62 +9,32 @@
 
         <div class="card">
 
+          <!-- SETA VOLTAR -->
+          <button
+            class="btn-voltar"
+            type="button"
+            title="Voltar"
+            @click="voltar"
+          >
+            <Icon
+              icon="carbon:chevron-left"
+              width="24"
+              height="24"
+            />
+          </button>
+
           <!-- ÍCONE -->
           <div class="icone">
-            <svg
-              width="36"
-              height="36"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <path
-                d="M8 4h8v4a4 4 0 01-8 0V4z"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
 
-              <path
-                d="M8 4H4v2a4 4 0 004 4"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-
-              <path
-                d="M16 4h4v2a4 4 0 01-4 4"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-
-              <path
-                d="M12 12v4"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-
-              <path
-                d="M9 20h6"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-
-              <path
-                d="M10 16h4v4h-4z"
-                stroke="#f0a800"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M8 4h8v4a4 4 0 01-8 0V4z" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M8 4H4v2a4 4 0 004 4" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M16 4h4v2a4 4 0 01-4 4" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M12 12v4" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M9 20h6" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M10 16h4v4h-4z" stroke="#f0a800" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
+
           </div>
 
           <h1>Cadastro de Campeonato</h1>
@@ -74,23 +43,10 @@
             Preencha os dados da competição
           </p>
 
-          <!-- BOTÃO VOLTAR -->
-          <button
-            class="btn-voltar"
-            type="button"
-            @click="voltar"
-          >
-            <Icon
-              icon="carbon:return"
-              width="24"
-              height="24"
-            />
-
-            <span>Voltar</span>
-          </button>
 
           <!-- FORMULÁRIO -->
           <form @submit.prevent="salvar">
+
 
             <!-- NOME -->
             <div class="campo">
@@ -160,10 +116,7 @@
                 required
               >
 
-                <option
-                  disabled
-                  value=""
-                >
+                <option disabled value="">
                   Selecione
                 </option>
 
@@ -236,6 +189,44 @@
             </div>
 
 
+            <!-- VISIBILIDADE -->
+            <div class="campo">
+
+              <label for="publico">
+                Visibilidade do campeonato
+              </label>
+
+              <select
+                id="publico"
+                v-model="form.publico"
+                required
+              >
+
+                <option :value="true">
+                  Público
+                </option>
+
+                <option :value="false">
+                  Privado
+                </option>
+
+              </select>
+
+              <small class="ajuda">
+
+                <span v-if="form.publico">
+                  Este campeonato ficará visível para todos os usuários.
+                </span>
+
+                <span v-else>
+                  Este campeonato ficará privado: só você poderá vê-lo.
+                </span>
+
+              </small>
+
+            </div>
+
+
             <!-- REGULAMENTO -->
             <div class="campo">
 
@@ -270,11 +261,7 @@
                 class="btn-primario"
                 :disabled="salvando"
               >
-                {{
-                  salvando
-                    ? 'Salvando...'
-                    : 'Salvar campeonato'
-                }}
+                {{ salvando ? 'Salvando...' : 'Salvar campeonato' }}
               </button>
 
             </div>
@@ -292,8 +279,9 @@
 
 
 <script>
-import { Icon } from '@iconify/vue';
-import Sidebar from '../components/Sidebar.vue';
+
+import { Icon } from '@iconify/vue'
+import Sidebar from '../components/Sidebar.vue'
 
 export default {
 
@@ -322,6 +310,10 @@ export default {
 
         status: 'planejado',
 
+        // true = público
+        // false = privado
+        publico: true,
+
         regulamento: ''
 
       },
@@ -330,9 +322,10 @@ export default {
 
       erro: null
 
-    };
+    }
 
   },
+
 
   methods: {
 
@@ -342,7 +335,7 @@ export default {
 
     voltar() {
 
-      window.history.back();
+      window.history.back()
 
     },
 
@@ -353,11 +346,24 @@ export default {
 
     async salvar() {
 
-      this.salvando = true;
+      this.salvando = true
 
-      this.erro = null;
+      this.erro = null
 
       try {
+
+        // O login guarda apenas o token JWT.
+        // O servidor descobre quem é o usuário a partir dele.
+        const token = localStorage.getItem('voleitcc_token')
+
+        if (!token) {
+
+          this.erro =
+            'Você precisa estar logado para criar um campeonato.'
+
+          return
+
+        }
 
         const resposta = await fetch(
           'http://localhost:3000/campeonatos',
@@ -365,36 +371,53 @@ export default {
             method: 'POST',
 
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
             },
 
             body: JSON.stringify(this.form)
 
           }
-        );
+        )
 
 
         if (!resposta.ok) {
 
+          const mensagem =
+            await resposta.text()
+
+          console.error(
+            'Erro do servidor:',
+            mensagem
+          )
+
           throw new Error(
             'Falha ao salvar campeonato'
-          );
+          )
 
         }
 
 
-        this.$router.push('/campeonatos');
+        // Depois de salvar,
+        // volta para a lista.
+        this.$router.push(
+          '/campeonatos'
+        )
+
 
       } catch (e) {
 
         this.erro =
-          'Não foi possível salvar o campeonato. Tente novamente.';
+          'Não foi possível salvar o campeonato. Tente novamente.'
 
-        console.error(e);
+        console.error(
+          'Erro ao salvar:',
+          e
+        )
 
       } finally {
 
-        this.salvando = false;
+        this.salvando = false
 
       }
 
@@ -402,7 +425,8 @@ export default {
 
   }
 
-};
+}
+
 </script>
 
 
@@ -413,28 +437,15 @@ export default {
 ========================= */
 
 .app-shell {
-
   min-height: 100vh;
-
   display: flex;
-
   background: #f5f6fa;
-
-  font-family:
-    'Segoe UI',
-    system-ui,
-    -apple-system,
-    sans-serif;
-
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-
 .content {
-
   flex: 1;
-
   overflow-y: auto;
-
 }
 
 
@@ -443,24 +454,12 @@ export default {
 ========================= */
 
 .fundo {
-
   min-height: 100vh;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
-  background: linear-gradient(
-    135deg,
-    #16224f 0%,
-    #101c46 60%,
-    #0b1533 100%
-  );
-
+  background: linear-gradient(135deg, #16224f 0%, #101c46 60%, #0b1533 100%);
   padding: 40px 20px;
-
 }
 
 
@@ -469,19 +468,42 @@ export default {
 ========================= */
 
 .card {
-
+  position: relative;
   background: #fff;
-
   border-radius: 20px;
-
   padding: 40px;
-
   width: 100%;
-
   max-width: 480px;
-
   box-sizing: border-box;
+}
 
+
+/* =========================
+   SETA VOLTAR
+========================= */
+
+.btn-voltar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #e7e8ef;
+  border-radius: 50%;
+  background: #fafbfd;
+  color: #101c46;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.btn-voltar:hover {
+  background: #eef1f6;
+  border-color: #101c46;
+  transform: translateX(-3px);
 }
 
 
@@ -490,27 +512,16 @@ export default {
 ========================= */
 
 .icone {
-
   width: 72px;
-
   height: 72px;
-
   border-radius: 50%;
-
   background: #101c46;
-
   border: 3px solid #f0a800;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   margin: 0 auto 20px auto;
-
   overflow: hidden;
-
 }
 
 
@@ -519,80 +530,18 @@ export default {
 ========================= */
 
 h1 {
-
   text-align: center;
-
   font-size: 24px;
-
   font-weight: 800;
-
   color: #101c46;
-
   margin: 0 0 8px 0;
-
 }
-
 
 .subtitulo {
-
   text-align: center;
-
   color: #6b7280;
-
   font-size: 14px;
-
   margin: 0 0 20px 0;
-
-}
-
-
-/* =========================
-   BOTÃO VOLTAR
-========================= */
-
-.btn-voltar {
-
-  width: 100%;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 8px;
-
-  margin-bottom: 24px;
-
-  padding: 11px 16px;
-
-  border: none;
-
-  border-radius: 8px;
-
-  background: #6c757d;
-
-  color: #fff;
-
-  font-size: 14px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s,
-    transform 0.2s;
-
-}
-
-
-.btn-voltar:hover {
-
-  background: #5c636a;
-
-  transform: translateY(-1px);
-
 }
 
 
@@ -601,60 +550,49 @@ h1 {
 ========================= */
 
 .campo {
-
   margin-bottom: 16px;
-
   flex: 1;
-
 }
-
 
 .campo label {
-
   display: block;
-
   font-size: 13px;
-
   font-weight: 700;
-
   color: #101c46;
-
   margin-bottom: 6px;
-
 }
-
 
 .campo input,
 .campo select,
 .campo textarea {
-
   width: 100%;
-
   padding: 11px 14px;
-
   border-radius: 8px;
-
   border: 1px solid #e7e8ef;
-
   font-size: 14px;
-
   font-family: inherit;
-
   background: #fafbfd;
-
   box-sizing: border-box;
-
   outline: none;
-
 }
-
 
 .campo input:focus,
 .campo select:focus,
 .campo textarea:focus {
-
   border-color: #101c46;
+}
 
+
+/* =========================
+   AJUDA VISIBILIDADE
+========================= */
+
+.ajuda {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b7280;
 }
 
 
@@ -663,11 +601,8 @@ h1 {
 ========================= */
 
 .linha {
-
   display: flex;
-
   gap: 14px;
-
 }
 
 
@@ -676,13 +611,9 @@ h1 {
 ========================= */
 
 .msg-erro {
-
   color: #d1435b;
-
   font-size: 14px;
-
   margin: 0 0 12px 0;
-
 }
 
 
@@ -691,15 +622,10 @@ h1 {
 ========================= */
 
 .acoes {
-
   display: flex;
-
   justify-content: flex-end;
-
   gap: 10px;
-
   margin-top: 8px;
-
 }
 
 
@@ -708,47 +634,26 @@ h1 {
 ========================= */
 
 .btn-primario {
-
   width: 100%;
-
   background: #101c46;
-
   color: #fff;
-
   border: none;
-
   padding: 12px 22px;
-
   border-radius: 10px;
-
   font-size: 14px;
-
   font-weight: 700;
-
   cursor: pointer;
-
-  transition:
-    background 0.2s,
-    transform 0.2s;
-
+  transition: background 0.2s, transform 0.2s;
 }
-
 
 .btn-primario:hover:not(:disabled) {
-
   background: #17275f;
-
   transform: translateY(-1px);
-
 }
 
-
 .btn-primario:disabled {
-
   opacity: 0.6;
-
   cursor: not-allowed;
-
 }
 
 
@@ -759,42 +664,29 @@ h1 {
 @media (max-width: 900px) {
 
   .app-shell {
-
     flex-direction: column;
-
   }
 
   .fundo {
-
     padding: 24px 16px;
-
   }
 
 }
 
-
 @media (max-width: 600px) {
 
   .card {
-
     padding: 28px 20px;
-
     border-radius: 16px;
-
   }
 
   .linha {
-
     flex-direction: column;
-
     gap: 0;
-
   }
 
   h1 {
-
     font-size: 21px;
-
   }
 
 }

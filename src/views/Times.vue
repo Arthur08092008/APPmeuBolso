@@ -9,13 +9,20 @@
           <p>Gerencie os times cadastrados no sistema</p>
         </header>
 
+        <!-- ERRO GERAL -->
+        <div v-if="erro" class="erro-msg" role="alert">
+          {{ erro }}
+        </div>
+
         <div class="content-grid">
           <!-- Formulário de cadastro/edição -->
           <section class="card form-card">
             <h2>{{ editando ? 'Editar Time' : 'Novo Time' }}</h2>
+
             <form @submit.prevent="salvarTime">
               <div class="field">
                 <label for="nome">Nome do time</label>
+
                 <input
                   id="nome"
                   v-model="form.nome"
@@ -27,6 +34,7 @@
 
               <div class="field">
                 <label for="cidade">Cidade</label>
+
                 <input
                   id="cidade"
                   v-model="form.cidade"
@@ -38,18 +46,45 @@
 
               <div class="field">
                 <label for="categoria">Categoria</label>
-                <select id="categoria" v-model="form.categoria" required>
-                  <option disabled value="">Selecione</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Feminino">Feminino</option>
-                  <option value="Misto">Misto</option>
+
+                <select
+                  id="categoria"
+                  v-model="form.categoria"
+                  required
+                >
+                  <option disabled value="">
+                    Selecione
+                  </option>
+
+                  <option value="Masculino">
+                    Masculino
+                  </option>
+
+                  <option value="Feminino">
+                    Feminino
+                  </option>
+
+                  <option value="Misto">
+                    Misto
+                  </option>
                 </select>
               </div>
 
               <div class="form-actions">
-                <button type="submit" class="btn-primary">
-                  {{ editando ? 'Salvar alterações' : 'Cadastrar time' }}
+                <button
+                  type="submit"
+                  class="btn-primary"
+                  :disabled="salvando"
+                >
+                  {{
+                    salvando
+                      ? 'Salvando...'
+                      : editando
+                        ? 'Salvar alterações'
+                        : 'Cadastrar time'
+                  }}
                 </button>
+
                 <button
                   v-if="editando"
                   type="button"
@@ -64,13 +99,28 @@
 
           <!-- Lista de times -->
           <section class="card list-card">
-            <h2>Times cadastrados ({{ times.length }})</h2>
+            <h2>
+              Times cadastrados ({{ times.length }})
+            </h2>
 
-            <div v-if="times.length === 0" class="empty-state">
+            <div
+              v-if="carregando"
+              class="empty-state"
+            >
+              Carregando times...
+            </div>
+
+            <div
+              v-else-if="times.length === 0"
+              class="empty-state"
+            >
               Nenhum time cadastrado ainda.
             </div>
 
-            <table v-else class="times-table">
+            <table
+              v-else
+              class="times-table"
+            >
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -79,19 +129,34 @@
                   <th></th>
                 </tr>
               </thead>
+
               <tbody>
-                <tr v-for="time in times" :key="time.id">
+                <tr
+                  v-for="time in times"
+                  :key="time.id"
+                >
                   <td>{{ time.nome }}</td>
+
                   <td>{{ time.cidade }}</td>
+
                   <td>
-                    <span class="badge" :class="badgeClass(time.categoria)">
+                    <span
+                      class="badge"
+                      :class="badgeClass(time.categoria)"
+                    >
                       {{ time.categoria }}
                     </span>
                   </td>
+
                   <td class="actions">
-                    <button class="icon-btn" title="Editar" @click="editarTime(time)">
+                    <button
+                      class="icon-btn"
+                      title="Editar"
+                      @click="editarTime(time)"
+                    >
                       ✏️
                     </button>
+
                     <button
                       class="icon-btn"
                       title="Excluir"
@@ -110,39 +175,21 @@
   </div>
 </template>
 
-
 <script>
 import Sidebar from '../components/Sidebar.vue'
+import api from '../services/api'
 
 export default {
   name: 'TimesPage',
+
   components: {
     Sidebar,
+    Icon,
   },
+
   data() {
     return {
-      // Dados mock
-      // Depois você pode substituir pela chamada da API
-      times: [
-        {
-          id: 1,
-          nome: 'Vôlei Clube Central',
-          cidade: 'Curitiba',
-          categoria: 'Masculino',
-        },
-        {
-          id: 2,
-          nome: 'Águias do Vôlei',
-          cidade: 'São Paulo',
-          categoria: 'Feminino',
-        },
-        {
-          id: 3,
-          nome: 'Estrelas do Litoral',
-          cidade: 'Santos',
-          categoria: 'Misto',
-        },
-      ],
+      times: [],
 
       form: {
         nome: '',
@@ -152,44 +199,94 @@ export default {
 
       editando: false,
       idEditando: null,
+
+      carregando: false,
+      salvando: false,
+      erro: '',
     }
   },
 
+  mounted() {
+    this.carregarTimes()
+  },
+
   methods: {
+    mensagemErro(e, padrao) {
+      return e.response?.data?.mensagem || padrao
+    },
 
-    salvarTime() {
-      if (this.editando) {
+    /* =========================
+       LISTAR
+    ========================= */
+    async carregarTimes() {
+      this.carregando = true
+      this.erro = ''
 
-        const index = this.times.findIndex(
-          (t) => t.id === this.idEditando
+      try {
+        const resposta = await api.get('/times')
+
+        this.times = Array.isArray(resposta.data)
+          ? resposta.data
+          : []
+      } catch (e) {
+        console.error('Erro ao carregar times:', e)
+
+        this.erro = this.mensagemErro(
+          e,
+          'Não foi possível carregar os times.'
         )
-
-        if (index !== -1) {
-          this.times[index] = {
-            ...this.form,
-            id: this.idEditando,
-          }
-        }
-
-        this.cancelarEdicao()
-
-      } else {
-
-        const novoId = this.times.length
-          ? Math.max(
-              ...this.times.map((t) => t.id)
-            ) + 1
-          : 1
-
-        this.times.push({
-          ...this.form,
-          id: novoId,
-        })
-
-        this.limparForm()
+      } finally {
+        this.carregando = false
       }
     },
 
+    /* =========================
+       CRIAR / EDITAR
+    ========================= */
+    async salvarTime() {
+      this.salvando = true
+      this.erro = ''
+
+      const dados = {
+        nome: this.form.nome.trim(),
+        cidade: this.form.cidade.trim(),
+        categoria: this.form.categoria,
+      }
+
+      try {
+        if (this.editando) {
+          const resposta = await api.put(
+            `/times/${this.idEditando}`,
+            dados
+          )
+
+          const index = this.times.findIndex(
+            (t) => t.id === this.idEditando
+          )
+
+          if (index !== -1) {
+            this.times[index] = resposta.data
+          }
+
+          this.cancelarEdicao()
+        } else {
+          const resposta = await api.post('/times', dados)
+
+          this.times.push(resposta.data)
+
+          this.limparForm()
+        }
+      } catch (e) {
+        console.error('Erro ao salvar time:', e)
+
+        this.erro = this.mensagemErro(
+          e,
+          'Não foi possível salvar o time.'
+        )
+      } finally {
+        this.salvando = false
+      }
+    },
 
     editarTime(time) {
       this.form = {
@@ -202,19 +299,37 @@ export default {
       this.idEditando = time.id
     },
 
-
-    excluirTime(id) {
+    /* =========================
+       EXCLUIR
+    ========================= */
+    async excluirTime(id) {
       if (
-        confirm(
+        !confirm(
           'Tem certeza que deseja excluir este time?'
         )
       ) {
-        this.times = this.times.filter(
-          (t) => t.id !== id
+        return
+      }
+
+      this.erro = ''
+
+      try {
+        await api.delete(`/times/${id}`)
+
+        this.times = this.times.filter((t) => t.id !== id)
+
+        if (this.idEditando === id) {
+          this.cancelarEdicao()
+        }
+      } catch (e) {
+        console.error('Erro ao excluir time:', e)
+
+        this.erro = this.mensagemErro(
+          e,
+          'Não foi possível excluir o time.'
         )
       }
     },
-
 
     cancelarEdicao() {
       this.editando = false
@@ -222,7 +337,6 @@ export default {
 
       this.limparForm()
     },
-
 
     limparForm() {
       this.form = {
@@ -232,7 +346,6 @@ export default {
       }
     },
 
-
     badgeClass(categoria) {
       return {
         Masculino: 'badge-azul',
@@ -240,11 +353,9 @@ export default {
         Misto: 'badge-neutro',
       }[categoria]
     },
-
   },
 }
 </script>
-
 
 <style scoped>
 .app-shell {
@@ -259,34 +370,17 @@ export default {
 
 .times-page {
   min-height: 100vh;
-
   display: flex;
-
+  flex-direction: column;
   background: #f4f7fb;
-
   font-family:
     'Segoe UI',
     Arial,
     sans-serif;
-}
-
-
-/* =================================
-   CONTEÚDO
-================================= */
-
-.times-page {
-  flex: 1;
-
-  min-width: 0;
-
   padding: 32px;
-
   box-sizing: border-box;
-
   overflow-y: auto;
 }
-
 
 /* =================================
    CABEÇALHO
@@ -294,18 +388,30 @@ export default {
 
 .page-header h1 {
   color: #0a3d62;
-
   margin: 0 0 4px;
-
   font-size: 28px;
 }
 
 .page-header p {
   color: #5a6b7b;
-
-  margin: 0 0 24px;
+  margin: 0;
 }
 
+/* =================================
+   ERRO
+================================= */
+
+.erro-msg {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  background: #fdecea;
+  color: #b3261e;
+
+  font-size: 14px;
+}
 
 /* =================================
    GRID
@@ -313,12 +419,9 @@ export default {
 
 .content-grid {
   display: grid;
-
   grid-template-columns: 340px minmax(0, 1fr);
-
   gap: 24px;
 }
-
 
 /* =================================
    CARDS
@@ -326,9 +429,7 @@ export default {
 
 .card {
   background: #ffffff;
-
   border-radius: 14px;
-
   padding: 24px;
 
   box-shadow:
@@ -337,16 +438,12 @@ export default {
 
 .card h2 {
   color: #0a3d62;
-
   font-size: 18px;
-
   margin: 0 0 16px;
 
   border-bottom: 3px solid #f6c90e;
-
   padding-bottom: 8px;
 }
-
 
 /* =================================
    CAMPOS
@@ -354,19 +451,14 @@ export default {
 
 .field {
   margin-bottom: 16px;
-
   display: flex;
-
   flex-direction: column;
 }
 
 .field label {
   font-size: 13px;
-
   color: #34495e;
-
   margin-bottom: 6px;
-
   font-weight: 600;
 }
 
@@ -375,17 +467,14 @@ export default {
   padding: 10px 12px;
 
   border: 1.5px solid #d7e1ea;
-
   border-radius: 8px;
 
   font-size: 14px;
-
   outline: none;
 
   transition: border-color 0.2s;
 
   box-sizing: border-box;
-
   width: 100%;
 }
 
@@ -394,16 +483,13 @@ export default {
   border-color: #0a3d62;
 }
 
-
 /* =================================
    BOTÕES DO FORMULÁRIO
 ================================= */
 
 .form-actions {
   display: flex;
-
   gap: 10px;
-
   margin-top: 8px;
 }
 
@@ -411,17 +497,14 @@ export default {
   flex: 1;
 
   background: #0a3d62;
-
   color: #fff;
 
   border: none;
 
   padding: 12px;
-
   border-radius: 8px;
 
   font-weight: 600;
-
   cursor: pointer;
 
   transition:
@@ -429,28 +512,28 @@ export default {
     color 0.2s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #f6c90e;
-
   color: #0a3d62;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
   background: transparent;
-
   color: #0a3d62;
 
   border: 1.5px solid #0a3d62;
 
   padding: 12px;
-
   border-radius: 8px;
 
   font-weight: 600;
-
   cursor: pointer;
 }
-
 
 /* =================================
    ESTADO VAZIO
@@ -458,12 +541,9 @@ export default {
 
 .empty-state {
   color: #8a99a8;
-
   text-align: center;
-
   padding: 32px 0;
 }
-
 
 /* =================================
    TABELA
@@ -471,7 +551,6 @@ export default {
 
 .times-table {
   width: 100%;
-
   border-collapse: collapse;
 }
 
@@ -481,7 +560,6 @@ export default {
   color: #5a6b7b;
 
   font-size: 12px;
-
   text-transform: uppercase;
 
   padding: 10px 8px;
@@ -499,7 +577,6 @@ export default {
   font-size: 14px;
 }
 
-
 /* =================================
    BADGES
 ================================= */
@@ -510,28 +587,23 @@ export default {
   border-radius: 999px;
 
   font-size: 12px;
-
   font-weight: 600;
 }
 
 .badge-azul {
   background: #e3edf7;
-
   color: #0a3d62;
 }
 
 .badge-amarelo {
   background: #fdf3cf;
-
   color: #a67c00;
 }
 
 .badge-neutro {
   background: #eef1f4;
-
   color: #5a6b7b;
 }
-
 
 /* =================================
    AÇÕES
@@ -539,19 +611,16 @@ export default {
 
 .actions {
   display: flex;
-
   gap: 8px;
 }
 
 .icon-btn {
   background: none;
-
   border: none;
 
   cursor: pointer;
 
   font-size: 16px;
-
   padding: 4px;
 
   border-radius: 6px;
@@ -561,5 +630,35 @@ export default {
 
 .icon-btn:hover {
   background: #f0f3f7;
+}
+
+/* =================================
+   RESPONSIVO
+================================= */
+
+@media (max-width: 900px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .times-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .times-page {
+    padding: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
 }
 </style>
